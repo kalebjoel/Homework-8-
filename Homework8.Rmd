@@ -1,0 +1,183 @@
+---
+title: "Homework 8"
+author: "Kaleb Luna | kl36927"
+date: "2025-04-14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+GitHub Link: <https://github.com/kalebjoel/Homework-8-.git>
+
+<P style="page-break-before: always">
+
+\newpage
+
+# Problem 1: Regression Warm up 
+
+```{r echo = FALSE, results = FALSE}
+library(ggplot2)
+creatnineData <- read.csv("creatinine.csv")
+
+```
+
+```{r echo = FALSE, results = FALSE, message = FALSE}
+ggplot(creatnineData, aes(x = age, y = creatclear)) + 
+  geom_point() + 
+  geom_smooth(method = 'lm', se = FALSE) + 
+  labs(title = "Creatinine Clearance vs. Age", 
+       x = "Age (years)",
+       y = "Creatinine Clearance")
+
+lm1 = lm(creatclear ~ age, data = creatnineData)
+coef(lm1) |> round(2) 
+
+
+# y = -x 
+```
+
+## Part A
+
+The expected creatinine clearance rate for a 55-year-old is approximately **113.71 mL/minute.** This expected rate was determined by obtaining the regression equation below from the visualization of the linear regression line above.
+
+**Equation:**
+
+-   ŷ = 147.81 - 0.62x
+
+## Part B 
+
+```{r echo = FALSE, results = FALSE}
+coef(lm1)
+```
+
+For every year of age, creatinine clearance **decreases** by approximately **-0.62 mL/minute.**
+
+-   I obtained this value by fitting a linear regression model using the lm() function, using creatnine clearance as the response variable and age as the explanatory variable. Then, I utilized the coef() function to obtain the slope of the regression line. \
+
+## Part C
+
+```{r echo = FALSE, results = FALSE}
+predict(lm1, newdata = data.frame(age= c(50,60)))
+```
+
+Based on the regression model **(ŷ = 147.81 - 0.62x)**, the predicted creatinine clearance rate of a 40-year old is 116.82 mL/minute, and the predicted creatinine clearance rate for a 60-year old is 110.62 mL/minute. Comparing the actual values with the predicted, we see:
+
+-   40-year-old: 135 - 116.82 = 18.18 mL/min above expected
+
+-   60-year-old: 112 - 110.62 = 1.38 mL/min above expected
+
+The creatinine clearance rate is healthier in the 40-year-old with a rate of 135 compared to the 60-year-old.
+
+<P style="page-break-before: always">
+
+\newpage
+
+# Problem 2: Modeling Disease Growth
+
+## Part 1 
+
+```{r echo = FALSE, warning = FALSE, message = FALSE, results = FALSE}
+covidData <- read.csv("covid.csv")
+
+italy <- subset(covidData, country == "Italy")
+modelItaly <- lm(log(deaths) ~ days_since_first_death, data = italy)
+coef(modelItaly)
+doublingItaly <- log(2) / 0.183218
+
+spain <- subset(covidData, country == "Spain")
+modelSpain <- lm(log(deaths) ~ days_since_first_death, data = spain)
+coef(modelSpain)
+doublingSpain <- log(2) / 0.2762447
+
+```
+
+```{r echo = FALSE, results = FALSE}
+set.seed(1)
+n <- nrow(italy)
+nboot <- 1000
+
+italy_slopes <- rep(NA, nboot)
+italy_doubling <- rep(NA, nboot)
+
+for (i in 1:nboot) {
+  samp <- italy[sample(1:n, replace = TRUE), ]
+  fit <- lm(log(deaths) ~ days_since_first_death, data = samp)
+  slope <- coef(fit)[2]
+  italy_slopes[i] <- slope
+  italy_doubling[i] <- log(2) / slope
+}
+
+quantile(italy_slopes, c(0.025, 0.975))     
+quantile(italy_doubling, c(0.025, 0.975))    
+
+```
+
+The estimated growth rate and doubling time for Italy is 0.183 and 3.8 days, respectively. The 95% bootstrapped confidence intervals for both measurements are (0.159, 0.209) and (3.323, 4.367), respectively.
+
+## Part 2
+
+```{r echo = FALSE, message = FALSE, results = FALSE}
+set.seed(2)  
+n <- nrow(spain)
+
+spain_slopes <- rep(NA, nboot)
+spain_doubling <- rep(NA, nboot)
+
+for (i in 1:nboot) {
+  samp <- spain[sample(1:n, replace = TRUE), ]
+  fit <- lm(log(deaths) ~ days_since_first_death, data = samp)
+  slope <- coef(fit)[2]
+  spain_slopes[i] <- slope
+  spain_doubling[i] <- log(2) / slope
+}
+
+quantile(spain_slopes, c(0.025, 0.975))     
+quantile(spain_doubling, c(0.025, 0.975))    
+
+```
+
+The estimated growth rate and doubling time for Spain is 0.276 and 2.5 days, respectively. The 95% bootstrapped confidence intervals for both measurements are (0.234, 0.320) and (2.168, 2.958), respectively.
+
+## Part 3
+
+```{r echo = FALSE}
+
+ggplot(covidData, aes(x = days_since_first_death, y = deaths, color = country)) +
+  geom_line() + 
+  labs(title = "Daily COVID-19 Deaths Over Time", 
+       x = "Days Since First Death", 
+       y = "Number of Deaths")
+
+```
+
+<P style="page-break-before: always">
+
+\newpage
+
+# Problem 3: Price Elasticity of Demand 
+
+```{r echo = FALSE, results= FALSE}
+milkData <- read.csv("milk.csv")
+milkModel <- lm(log(sales) ~ log(price), data = milkData)
+summary(milkModel) 
+
+set.seed(3)
+n <- nrow(milkData)
+nboot <- 1000
+betas <- rep(NA, nboot)
+
+for (i in 1:nboot) {
+  samp <- milkData[sample(1:n, replace = TRUE), ]
+  fit <- lm(log(sales) ~ log(price), data = samp)
+  betas[i] <- coef(fit)[2]
+}
+
+quantile(betas, c(0.025, 0.975))  # 95% CI
+
+```
+
+The estimated price elasticity of demand for milk is approximately **-1.619,** meaning that the demand for milk decreases as the price increases. The estimated 95% bootstrapped confidence interval is **(-1.784, -1.460).**
+
+To estimate the price elasticity of demand for milk, I fit a linear regression model using log(sales) and log(prices) based on the power-model equation, Q. = K \* P\^(Beta), from which I obtained the price elasticity estimate. Then, I used the bootstrapping technique to get a 95% confidence interval for the price elasticity.
